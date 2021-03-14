@@ -1,5 +1,10 @@
 from OpenSSL import SSL
-from twisted.internet.ssl import optionsForClientTLS, CertificateOptions, platformTrust, AcceptableCiphers
+from twisted.internet.ssl import (
+    optionsForClientTLS,
+    CertificateOptions,
+    platformTrust,
+    AcceptableCiphers,
+)
 from twisted.web.client import BrowserLikePolicyForHTTPS
 from twisted.web.iweb import IPolicyForHTTPS
 from zope.interface.declarations import implementer
@@ -19,7 +24,14 @@ class ScrapyClientContextFactory(BrowserLikePolicyForHTTPS):
      understand the SSLv3, TLSv1, TLSv1.1 and TLSv1.2 protocols.'
     """
 
-    def __init__(self, method=SSL.SSLv23_METHOD, tls_verbose_logging=False, tls_ciphers=None, *args, **kwargs):
+    def __init__(
+        self,
+        method=SSL.SSLv23_METHOD,
+        tls_verbose_logging=False,
+        tls_ciphers=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self._ssl_method = method
         self.tls_verbose_logging = tls_verbose_logging
@@ -30,9 +42,15 @@ class ScrapyClientContextFactory(BrowserLikePolicyForHTTPS):
 
     @classmethod
     def from_settings(cls, settings, method=SSL.SSLv23_METHOD, *args, **kwargs):
-        tls_verbose_logging = settings.getbool('DOWNLOADER_CLIENT_TLS_VERBOSE_LOGGING')
-        tls_ciphers = settings['DOWNLOADER_CLIENT_TLS_CIPHERS']
-        return cls(method=method, tls_verbose_logging=tls_verbose_logging, tls_ciphers=tls_ciphers, *args, **kwargs)
+        tls_verbose_logging = settings.getbool("DOWNLOADER_CLIENT_TLS_VERBOSE_LOGGING")
+        tls_ciphers = settings["DOWNLOADER_CLIENT_TLS_CIPHERS"]
+        return cls(
+            method=method,
+            tls_verbose_logging=tls_verbose_logging,
+            tls_ciphers=tls_ciphers,
+            *args,
+            **kwargs
+        )
 
     def getCertificateOptions(self):
         # setting verify=True will require you to provide CAs
@@ -48,7 +66,7 @@ class ScrapyClientContextFactory(BrowserLikePolicyForHTTPS):
         #   not calling super().__init__
         return CertificateOptions(
             verify=False,
-            method=getattr(self, 'method', getattr(self, '_ssl_method', None)),
+            method=getattr(self, "method", getattr(self, "_ssl_method", None)),
             fixBrokenPeers=True,
             acceptableCiphers=self.tls_ciphers,
         )
@@ -59,8 +77,11 @@ class ScrapyClientContextFactory(BrowserLikePolicyForHTTPS):
         return self.getCertificateOptions().getContext()
 
     def creatorForNetloc(self, hostname, port):
-        return ScrapyClientTLSOptions(hostname.decode("ascii"), self.getContext(),
-                                      verbose_logging=self.tls_verbose_logging)
+        return ScrapyClientTLSOptions(
+            hostname.decode("ascii"),
+            self.getContext(),
+            verbose_logging=self.tls_verbose_logging,
+        )
 
 
 @implementer(IPolicyForHTTPS)
@@ -81,6 +102,7 @@ class BrowserLikeContextFactory(ScrapyClientContextFactory):
     The default OpenSSL method is ``TLS_METHOD`` (also called
     ``SSLv23_METHOD``) which allows TLS protocol negotiation.
     """
+
     def creatorForNetloc(self, hostname, port):
 
         # trustRoot set to platformTrust() will use the platform's root CAs.
@@ -90,5 +112,5 @@ class BrowserLikeContextFactory(ScrapyClientContextFactory):
         return optionsForClientTLS(
             hostname=hostname.decode("ascii"),
             trustRoot=platformTrust(),
-            extraCertificateOptions={'method': self._ssl_method},
+            extraCertificateOptions={"method": self._ssl_method},
         )

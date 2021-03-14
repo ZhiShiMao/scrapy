@@ -19,6 +19,7 @@ Protego = "^0.1.15"
 itemadapter = "^0.1.0"
 lxml = "^4.6.2"
 PyDispatcher = "^2.0.5"
+Pillow = "^8.1.2"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.23.0"
