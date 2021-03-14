@@ -14,26 +14,26 @@ from scrapy.utils.python import binary_is_text, to_bytes, to_unicode
 class ResponseTypes:
 
     CLASSES = {
-        'text/html': 'scrapy.http.HtmlResponse',
-        'application/atom+xml': 'scrapy.http.XmlResponse',
-        'application/rdf+xml': 'scrapy.http.XmlResponse',
-        'application/rss+xml': 'scrapy.http.XmlResponse',
-        'application/xhtml+xml': 'scrapy.http.HtmlResponse',
-        'application/vnd.wap.xhtml+xml': 'scrapy.http.HtmlResponse',
-        'application/xml': 'scrapy.http.XmlResponse',
-        'application/json': 'scrapy.http.TextResponse',
-        'application/x-json': 'scrapy.http.TextResponse',
-        'application/json-amazonui-streaming': 'scrapy.http.TextResponse',
-        'application/javascript': 'scrapy.http.TextResponse',
-        'application/x-javascript': 'scrapy.http.TextResponse',
-        'text/xml': 'scrapy.http.XmlResponse',
-        'text/*': 'scrapy.http.TextResponse',
+        "text/html": "scrapy.http.HtmlResponse",
+        "application/atom+xml": "scrapy.http.XmlResponse",
+        "application/rdf+xml": "scrapy.http.XmlResponse",
+        "application/rss+xml": "scrapy.http.XmlResponse",
+        "application/xhtml+xml": "scrapy.http.HtmlResponse",
+        "application/vnd.wap.xhtml+xml": "scrapy.http.HtmlResponse",
+        "application/xml": "scrapy.http.XmlResponse",
+        "application/json": "scrapy.http.TextResponse",
+        "application/x-json": "scrapy.http.TextResponse",
+        "application/json-amazonui-streaming": "scrapy.http.TextResponse",
+        "application/javascript": "scrapy.http.TextResponse",
+        "application/x-javascript": "scrapy.http.TextResponse",
+        "text/xml": "scrapy.http.XmlResponse",
+        "text/*": "scrapy.http.TextResponse",
     }
 
     def __init__(self):
         self.classes = {}
         self.mimetypes = MimeTypes()
-        mimedata = get_data('scrapy', 'mime.types').decode('utf8')
+        mimedata = get_data("scrapy", "mime.types").decode("utf8")
         self.mimetypes.readfp(StringIO(mimedata))
         for mimetype, cls in self.CLASSES.items():
             self.classes[mimetype] = load_object(cls)
@@ -50,17 +50,20 @@ class ResponseTypes:
 
     def from_content_type(self, content_type, content_encoding=None):
         """Return the most appropriate Response class from an HTTP Content-Type
-        header """
+        header"""
         if content_encoding:
             return Response
-        mimetype = to_unicode(content_type).split(';')[0].strip().lower()
+        mimetype = to_unicode(content_type).split(";")[0].strip().lower()
         return self.from_mimetype(mimetype)
 
     def from_content_disposition(self, content_disposition):
         try:
-            filename = to_unicode(
-                content_disposition, encoding='latin-1', errors='replace'
-            ).split(';')[1].split('=')[1].strip('"\'')
+            filename = (
+                to_unicode(content_disposition, encoding="latin-1", errors="replace")
+                .split(";")[1]
+                .split("=")[1]
+                .strip("\"'")
+            )
             return self.from_filename(filename)
         except IndexError:
             return Response
@@ -69,13 +72,13 @@ class ResponseTypes:
         """Return the most appropriate Response class by looking at the HTTP
         headers"""
         cls = Response
-        if b'Content-Type' in headers:
+        if b"Content-Type" in headers:
             cls = self.from_content_type(
-                content_type=headers[b'Content-Type'],
-                content_encoding=headers.get(b'Content-Encoding')
+                content_type=headers[b"Content-Type"],
+                content_encoding=headers.get(b"Content-Encoding"),
             )
-        if cls is Response and b'Content-Disposition' in headers:
-            cls = self.from_content_disposition(headers[b'Content-Disposition'])
+        if cls is Response and b"Content-Disposition" in headers:
+            cls = self.from_content_disposition(headers[b"Content-Disposition"])
         return cls
 
     def from_filename(self, filename):
@@ -94,13 +97,13 @@ class ResponseTypes:
         chunk = body[:5000]
         chunk = to_bytes(chunk)
         if not binary_is_text(chunk):
-            return self.from_mimetype('application/octet-stream')
+            return self.from_mimetype("application/octet-stream")
         elif b"<html>" in chunk.lower():
-            return self.from_mimetype('text/html')
+            return self.from_mimetype("text/html")
         elif b"<?xml" in chunk.lower():
-            return self.from_mimetype('text/xml')
+            return self.from_mimetype("text/xml")
         else:
-            return self.from_mimetype('text')
+            return self.from_mimetype("text")
 
     def from_args(self, headers=None, url=None, filename=None, body=None):
         """Guess the most appropriate Response class based on

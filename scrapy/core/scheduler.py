@@ -35,8 +35,18 @@ class Scheduler:
     (in-memory and on-disk) and implements fallback logic for them.
     Also, it handles dupefilters.
     """
-    def __init__(self, dupefilter, jobdir=None, dqclass=None, mqclass=None,
-                 logunser=False, stats=None, pqclass=None, crawler=None):
+
+    def __init__(
+        self,
+        dupefilter,
+        jobdir=None,
+        dqclass=None,
+        mqclass=None,
+        logunser=False,
+        stats=None,
+        pqclass=None,
+        crawler=None,
+    ):
         self.df = dupefilter
         self.dqdir = self._dqdir(jobdir)
         self.pqclass = pqclass
@@ -49,15 +59,22 @@ class Scheduler:
     @classmethod
     def from_crawler(cls, crawler):
         settings = crawler.settings
-        dupefilter_cls = load_object(settings['DUPEFILTER_CLASS'])
+        dupefilter_cls = load_object(settings["DUPEFILTER_CLASS"])
         dupefilter = create_instance(dupefilter_cls, settings, crawler)
-        pqclass = load_object(settings['SCHEDULER_PRIORITY_QUEUE'])
-        dqclass = load_object(settings['SCHEDULER_DISK_QUEUE'])
-        mqclass = load_object(settings['SCHEDULER_MEMORY_QUEUE'])
-        logunser = settings.getbool('SCHEDULER_DEBUG')
-        return cls(dupefilter, jobdir=job_dir(settings), logunser=logunser,
-                   stats=crawler.stats, pqclass=pqclass, dqclass=dqclass,
-                   mqclass=mqclass, crawler=crawler)
+        pqclass = load_object(settings["SCHEDULER_PRIORITY_QUEUE"])
+        dqclass = load_object(settings["SCHEDULER_DISK_QUEUE"])
+        mqclass = load_object(settings["SCHEDULER_MEMORY_QUEUE"])
+        logunser = settings.getbool("SCHEDULER_DEBUG")
+        return cls(
+            dupefilter,
+            jobdir=job_dir(settings),
+            logunser=logunser,
+            stats=crawler.stats,
+            pqclass=pqclass,
+            dqclass=dqclass,
+            mqclass=mqclass,
+            crawler=crawler,
+        )
 
     def has_pending_requests(self):
         return len(self) > 0
@@ -80,23 +97,23 @@ class Scheduler:
             return False
         dqok = self._dqpush(request)
         if dqok:
-            self.stats.inc_value('scheduler/enqueued/disk', spider=self.spider)
+            self.stats.inc_value("scheduler/enqueued/disk", spider=self.spider)
         else:
             self._mqpush(request)
-            self.stats.inc_value('scheduler/enqueued/memory', spider=self.spider)
-        self.stats.inc_value('scheduler/enqueued', spider=self.spider)
+            self.stats.inc_value("scheduler/enqueued/memory", spider=self.spider)
+        self.stats.inc_value("scheduler/enqueued", spider=self.spider)
         return True
 
     def next_request(self):
         request = self.mqs.pop()
         if request:
-            self.stats.inc_value('scheduler/dequeued/memory', spider=self.spider)
+            self.stats.inc_value("scheduler/dequeued/memory", spider=self.spider)
         else:
             request = self._dqpop()
             if request:
-                self.stats.inc_value('scheduler/dequeued/disk', spider=self.spider)
+                self.stats.inc_value("scheduler/dequeued/disk", spider=self.spider)
         if request:
-            self.stats.inc_value('scheduler/dequeued', spider=self.spider)
+            self.stats.inc_value("scheduler/dequeued", spider=self.spider)
         return request
 
     def __len__(self):
@@ -109,14 +126,19 @@ class Scheduler:
             self.dqs.push(request)
         except ValueError as e:  # non serializable request
             if self.logunser:
-                msg = ("Unable to serialize request: %(request)s - reason:"
-                       " %(reason)s - no more unserializable requests will be"
-                       " logged (stats being collected)")
-                logger.warning(msg, {'request': request, 'reason': e},
-                               exc_info=True, extra={'spider': self.spider})
+                msg = (
+                    "Unable to serialize request: %(request)s - reason:"
+                    " %(reason)s - no more unserializable requests will be"
+                    " logged (stats being collected)"
+                )
+                logger.warning(
+                    msg,
+                    {"request": request, "reason": e},
+                    exc_info=True,
+                    extra={"spider": self.spider},
+                )
                 self.logunser = False
-            self.stats.inc_value('scheduler/unserializable',
-                                 spider=self.spider)
+            self.stats.inc_value("scheduler/unserializable", spider=self.spider)
             return
         else:
             return True
@@ -130,41 +152,48 @@ class Scheduler:
 
     def _mq(self):
         """ Create a new priority queue instance, with in-memory storage """
-        return create_instance(self.pqclass,
-                               settings=None,
-                               crawler=self.crawler,
-                               downstream_queue_cls=self.mqclass,
-                               key='')
+        return create_instance(
+            self.pqclass,
+            settings=None,
+            crawler=self.crawler,
+            downstream_queue_cls=self.mqclass,
+            key="",
+        )
 
     def _dq(self):
         """ Create a new priority queue instance, with disk storage """
         state = self._read_dqs_state(self.dqdir)
-        q = create_instance(self.pqclass,
-                            settings=None,
-                            crawler=self.crawler,
-                            downstream_queue_cls=self.dqclass,
-                            key=self.dqdir,
-                            startprios=state)
+        q = create_instance(
+            self.pqclass,
+            settings=None,
+            crawler=self.crawler,
+            downstream_queue_cls=self.dqclass,
+            key=self.dqdir,
+            startprios=state,
+        )
         if q:
-            logger.info("Resuming crawl (%(queuesize)d requests scheduled)",
-                        {'queuesize': len(q)}, extra={'spider': self.spider})
+            logger.info(
+                "Resuming crawl (%(queuesize)d requests scheduled)",
+                {"queuesize": len(q)},
+                extra={"spider": self.spider},
+            )
         return q
 
     def _dqdir(self, jobdir):
         """ Return a folder name to keep disk queue state at """
         if jobdir:
-            dqdir = join(jobdir, 'requests.queue')
+            dqdir = join(jobdir, "requests.queue")
             if not exists(dqdir):
                 os.makedirs(dqdir)
             return dqdir
 
     def _read_dqs_state(self, dqdir):
-        path = join(dqdir, 'active.json')
+        path = join(dqdir, "active.json")
         if not exists(path):
             return ()
         with open(path) as f:
             return json.load(f)
 
     def _write_dqs_state(self, dqdir, state):
-        with open(join(dqdir, 'active.json'), 'w') as f:
+        with open(join(dqdir, "active.json"), "w") as f:
             json.dump(state, f)

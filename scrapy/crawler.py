@@ -37,10 +37,9 @@ logger = logging.getLogger(__name__)
 
 
 class Crawler:
-
     def __init__(self, spidercls, settings=None):
         if isinstance(spidercls, Spider):
-            raise ValueError('The spidercls argument must be a class, not an object')
+            raise ValueError("The spidercls argument must be a class, not an object")
 
         if isinstance(settings, dict) or settings is None:
             settings = Settings(settings)
@@ -50,14 +49,15 @@ class Crawler:
         self.spidercls.update_settings(self.settings)
 
         self.signals = SignalManager(self)
-        self.stats = load_object(self.settings['STATS_CLASS'])(self)
+        self.stats = load_object(self.settings["STATS_CLASS"])(self)
 
-        handler = LogCounterHandler(self, level=self.settings.get('LOG_LEVEL'))
+        handler = LogCounterHandler(self, level=self.settings.get("LOG_LEVEL"))
         logging.root.addHandler(handler)
 
         d = dict(overridden_settings(self.settings))
-        logger.info("Overridden settings:\n%(settings)s",
-                    {'settings': pprint.pformat(d)})
+        logger.info(
+            "Overridden settings:\n%(settings)s", {"settings": pprint.pformat(d)}
+        )
 
         if get_scrapy_root_handler() is not None:
             # scrapy root handler already installed: update it with new settings
@@ -67,7 +67,7 @@ class Crawler:
         self.__remove_handler = lambda: logging.root.removeHandler(handler)
         self.signals.connect(self.__remove_handler, signals.engine_stopped)
 
-        lf_cls = load_object(self.settings['LOG_FORMATTER'])
+        lf_cls = load_object(self.settings["LOG_FORMATTER"])
         self.logformatter = lf_cls.from_crawler(self)
         self.extensions = ExtensionManager.from_crawler(self)
 
@@ -125,23 +125,26 @@ class CrawlerRunner:
     crawlers = property(
         lambda self: self._crawlers,
         doc="Set of :class:`crawlers <scrapy.crawler.Crawler>` started by "
-            ":meth:`crawl` and managed by this class."
+        ":meth:`crawl` and managed by this class.",
     )
 
     @staticmethod
     def _get_spider_loader(settings):
         """ Get SpiderLoader instance from settings """
-        cls_path = settings.get('SPIDER_LOADER_CLASS')
+        cls_path = settings.get("SPIDER_LOADER_CLASS")
         loader_cls = load_object(cls_path)
-        excs = (DoesNotImplement, MultipleInvalid) if MultipleInvalid else DoesNotImplement
+        excs = (
+            (DoesNotImplement, MultipleInvalid) if MultipleInvalid else DoesNotImplement
+        )
         try:
             verifyClass(ISpiderLoader, loader_cls)
         except excs:
             warnings.warn(
-                'SPIDER_LOADER_CLASS (previously named SPIDER_MANAGER_CLASS) does '
-                'not fully implement scrapy.interfaces.ISpiderLoader interface. '
-                'Please add all missing methods to avoid unexpected runtime errors.',
-                category=ScrapyDeprecationWarning, stacklevel=2
+                "SPIDER_LOADER_CLASS (previously named SPIDER_MANAGER_CLASS) does "
+                "not fully implement scrapy.interfaces.ISpiderLoader interface. "
+                "Please add all missing methods to avoid unexpected runtime errors.",
+                category=ScrapyDeprecationWarning,
+                stacklevel=2,
             )
         return loader_cls.from_settings(settings.frozencopy())
 
@@ -157,9 +160,12 @@ class CrawlerRunner:
 
     @property
     def spiders(self):
-        warnings.warn("CrawlerRunner.spiders attribute is renamed to "
-                      "CrawlerRunner.spider_loader.",
-                      category=ScrapyDeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "CrawlerRunner.spiders attribute is renamed to "
+            "CrawlerRunner.spider_loader.",
+            category=ScrapyDeprecationWarning,
+            stacklevel=2,
+        )
         return self.spider_loader
 
     def crawl(self, crawler_or_spidercls, *args, **kwargs):
@@ -186,8 +192,9 @@ class CrawlerRunner:
         """
         if isinstance(crawler_or_spidercls, Spider):
             raise ValueError(
-                'The crawler_or_spidercls argument cannot be a spider object, '
-                'it must be a spider class (or a Crawler object)')
+                "The crawler_or_spidercls argument cannot be a spider object, "
+                "it must be a spider class (or a Crawler object)"
+            )
         crawler = self.create_crawler(crawler_or_spidercls)
         return self._crawl(crawler, *args, **kwargs)
 
@@ -199,7 +206,7 @@ class CrawlerRunner:
         def _done(result):
             self.crawlers.discard(crawler)
             self._active.discard(d)
-            self.bootstrap_failed |= not getattr(crawler, 'spider', None)
+            self.bootstrap_failed |= not getattr(crawler, "spider", None)
             return result
 
         return d.addBoth(_done)
@@ -217,8 +224,9 @@ class CrawlerRunner:
         """
         if isinstance(crawler_or_spidercls, Spider):
             raise ValueError(
-                'The crawler_or_spidercls argument cannot be a spider object, '
-                'it must be a spider class (or a Crawler object)')
+                "The crawler_or_spidercls argument cannot be a spider object, "
+                "it must be a spider class (or a Crawler object)"
+            )
         if isinstance(crawler_or_spidercls, Crawler):
             return crawler_or_spidercls
         return self._create_crawler(crawler_or_spidercls)
@@ -284,18 +292,23 @@ class CrawlerProcess(CrawlerRunner):
 
     def _signal_shutdown(self, signum, _):
         from twisted.internet import reactor
+
         install_shutdown_handlers(self._signal_kill)
         signame = signal_names[signum]
-        logger.info("Received %(signame)s, shutting down gracefully. Send again to force ",
-                    {'signame': signame})
+        logger.info(
+            "Received %(signame)s, shutting down gracefully. Send again to force ",
+            {"signame": signame},
+        )
         reactor.callFromThread(self._graceful_stop_reactor)
 
     def _signal_kill(self, signum, _):
         from twisted.internet import reactor
+
         install_shutdown_handlers(signal.SIG_IGN)
         signame = signal_names[signum]
-        logger.info('Received %(signame)s twice, forcing unclean shutdown',
-                    {'signame': signame})
+        logger.info(
+            "Received %(signame)s twice, forcing unclean shutdown", {"signame": signame}
+        )
         reactor.callFromThread(self._stop_reactor)
 
     def start(self, stop_after_crawl=True):
@@ -311,6 +324,7 @@ class CrawlerProcess(CrawlerRunner):
             crawlers have finished
         """
         from twisted.internet import reactor
+
         if stop_after_crawl:
             d = self.join()
             # Don't start the reactor if the deferreds are already fired
@@ -322,8 +336,8 @@ class CrawlerProcess(CrawlerRunner):
         resolver = create_instance(resolver_class, self.settings, self, reactor=reactor)
         resolver.install_on_reactor()
         tp = reactor.getThreadPool()
-        tp.adjustPoolsize(maxthreads=self.settings.getint('REACTOR_THREADPOOL_MAXSIZE'))
-        reactor.addSystemEventTrigger('before', 'shutdown', self.stop)
+        tp.adjustPoolsize(maxthreads=self.settings.getint("REACTOR_THREADPOOL_MAXSIZE"))
+        reactor.addSystemEventTrigger("before", "shutdown", self.stop)
         reactor.run(installSignalHandlers=False)  # blocking call
 
     def _graceful_stop_reactor(self):
@@ -333,6 +347,7 @@ class CrawlerProcess(CrawlerRunner):
 
     def _stop_reactor(self, _=None):
         from twisted.internet import reactor
+
         try:
             reactor.stop()
         except RuntimeError:  # raised if already stopped or in shutdown stage
@@ -340,5 +355,7 @@ class CrawlerProcess(CrawlerRunner):
 
     def _handle_twisted_reactor(self):
         if self.settings.get("TWISTED_REACTOR"):
-            install_reactor(self.settings["TWISTED_REACTOR"], self.settings["ASYNCIO_EVENT_LOOP"])
+            install_reactor(
+                self.settings["TWISTED_REACTOR"], self.settings["ASYNCIO_EVENT_LOOP"]
+            )
         super()._handle_twisted_reactor()
