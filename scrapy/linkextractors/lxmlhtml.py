@@ -24,8 +24,8 @@ _collect_string_content = etree.XPath("string()")
 
 def _nons(tag):
     if isinstance(tag, str):
-        if tag[0] == '{' and tag[1:len(XHTML_NAMESPACE) + 1] == XHTML_NAMESPACE:
-            return tag.split('}')[-1]
+        if tag[0] == "{" and tag[1 : len(XHTML_NAMESPACE) + 1] == XHTML_NAMESPACE:
+            return tag.split("}")[-1]
     return tag
 
 
@@ -39,14 +39,22 @@ def _canonicalize_link_url(link):
 
 class LxmlParserLinkExtractor:
     def __init__(
-        self, tag="a", attr="href", process=None, unique=False, strip=True, canonicalized=False
+        self,
+        tag="a",
+        attr="href",
+        process=None,
+        unique=False,
+        strip=True,
+        canonicalized=False,
     ):
         self.scan_tag = tag if callable(tag) else partial(operator.eq, tag)
         self.scan_attr = attr if callable(attr) else partial(operator.eq, attr)
         self.process_attr = process if callable(process) else _identity
         self.unique = unique
         self.strip = strip
-        self.link_key = operator.attrgetter("url") if canonicalized else _canonicalize_link_url
+        self.link_key = (
+            operator.attrgetter("url") if canonicalized else _canonicalize_link_url
+        )
 
     def _iter_links(self, document):
         for el in document.iter(etree.Element):
@@ -76,17 +84,22 @@ class LxmlParserLinkExtractor:
             url = safe_url_string(url, encoding=response_encoding)
             # to fix relative links after process_value
             url = urljoin(response_url, url)
-            link = Link(url, _collect_string_content(el) or '',
-                        nofollow=rel_has_nofollow(el.get('rel')))
+            link = Link(
+                url,
+                _collect_string_content(el) or "",
+                nofollow=rel_has_nofollow(el.get("rel")),
+            )
             links.append(link)
         return self._deduplicate_if_needed(links)
 
     def extract_links(self, response):
         base_url = get_base_url(response)
-        return self._extract_links(response.selector, response.url, response.encoding, base_url)
+        return self._extract_links(
+            response.selector, response.url, response.encoding, base_url
+        )
 
     def _process_links(self, links):
-        """ Normalize and filter extracted links
+        """Normalize and filter extracted links
 
         The subclass should override it if neccessary
         """
@@ -99,7 +112,6 @@ class LxmlParserLinkExtractor:
 
 
 class LxmlLinkExtractor(FilteringLinkExtractor):
-
     def __init__(
         self,
         allow=(),
@@ -107,8 +119,8 @@ class LxmlLinkExtractor(FilteringLinkExtractor):
         allow_domains=(),
         deny_domains=(),
         restrict_xpaths=(),
-        tags=('a', 'area'),
-        attrs=('href',),
+        tags=("a", "area"),
+        attrs=("href",),
         canonicalize=False,
         unique=True,
         process_value=None,
@@ -124,7 +136,7 @@ class LxmlLinkExtractor(FilteringLinkExtractor):
             unique=unique,
             process=process_value,
             strip=strip,
-            canonicalized=canonicalize
+            canonicalized=canonicalize,
         )
         super().__init__(
             link_extractor=lx,
@@ -151,9 +163,7 @@ class LxmlLinkExtractor(FilteringLinkExtractor):
         base_url = get_base_url(response)
         if self.restrict_xpaths:
             docs = [
-                subdoc
-                for x in self.restrict_xpaths
-                for subdoc in response.xpath(x)
+                subdoc for x in self.restrict_xpaths for subdoc in response.xpath(x)
             ]
         else:
             docs = [response.selector]

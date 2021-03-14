@@ -11,7 +11,7 @@ def _import_file(filepath):
     abspath = os.path.abspath(filepath)
     dirname, file = os.path.split(abspath)
     fname, fext = os.path.splitext(file)
-    if fext not in ('.py', '.pyw'):
+    if fext not in (".py", ".pyw"):
         raise ValueError(f"Not a Python source file: {abspath}")
     if dirname:
         sys.path = [dirname] + sys.path
@@ -26,7 +26,7 @@ def _import_file(filepath):
 class Command(BaseRunSpiderCommand):
 
     requires_project = False
-    default_settings = {'SPIDER_LOADER_WARN_ONLY': True}
+    default_settings = {"SPIDER_LOADER_WARN_ONLY": True}
 
     def syntax(self):
         return "[options] <spider_file>"

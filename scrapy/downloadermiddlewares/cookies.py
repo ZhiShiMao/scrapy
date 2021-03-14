@@ -19,12 +19,12 @@ class CookiesMiddleware:
 
     @classmethod
     def from_crawler(cls, crawler):
-        if not crawler.settings.getbool('COOKIES_ENABLED'):
+        if not crawler.settings.getbool("COOKIES_ENABLED"):
             raise NotConfigured
-        return cls(crawler.settings.getbool('COOKIES_DEBUG'))
+        return cls(crawler.settings.getbool("COOKIES_DEBUG"))
 
     def process_request(self, request, spider):
-        if request.meta.get('dont_merge_cookies', False):
+        if request.meta.get("dont_merge_cookies", False):
             return
 
         cookiejarkey = request.meta.get("cookiejar")
@@ -33,12 +33,12 @@ class CookiesMiddleware:
             jar.set_cookie_if_ok(cookie, request)
 
         # set Cookie header
-        request.headers.pop('Cookie', None)
+        request.headers.pop("Cookie", None)
         jar.add_cookie_header(request)
         self._debug_cookie(request, spider)
 
     def process_response(self, request, response, spider):
-        if request.meta.get('dont_merge_cookies', False):
+        if request.meta.get("dont_merge_cookies", False):
             return response
 
         # extract cookies from Set-Cookie and drop invalid/expired cookies
@@ -51,21 +51,25 @@ class CookiesMiddleware:
 
     def _debug_cookie(self, request, spider):
         if self.debug:
-            cl = [to_unicode(c, errors='replace')
-                  for c in request.headers.getlist('Cookie')]
+            cl = [
+                to_unicode(c, errors="replace")
+                for c in request.headers.getlist("Cookie")
+            ]
             if cl:
                 cookies = "\n".join(f"Cookie: {c}\n" for c in cl)
                 msg = f"Sending cookies to: {request}\n{cookies}"
-                logger.debug(msg, extra={'spider': spider})
+                logger.debug(msg, extra={"spider": spider})
 
     def _debug_set_cookie(self, response, spider):
         if self.debug:
-            cl = [to_unicode(c, errors='replace')
-                  for c in response.headers.getlist('Set-Cookie')]
+            cl = [
+                to_unicode(c, errors="replace")
+                for c in response.headers.getlist("Set-Cookie")
+            ]
             if cl:
                 cookies = "\n".join(f"Set-Cookie: {c}\n" for c in cl)
                 msg = f"Received cookies from: {response}\n{cookies}"
-                logger.debug(msg, extra={'spider': spider})
+                logger.debug(msg, extra={"spider": spider})
 
     def _format_cookie(self, cookie, request):
         """
@@ -86,8 +90,11 @@ class CookiesMiddleware:
                 try:
                     decoded[key] = cookie[key].decode("utf8")
                 except UnicodeDecodeError:
-                    logger.warning("Non UTF-8 encoded cookie found in request %s: %s",
-                                   request, cookie)
+                    logger.warning(
+                        "Non UTF-8 encoded cookie found in request %s: %s",
+                        request,
+                        cookie,
+                    )
                     decoded[key] = cookie[key].decode("latin1", errors="replace")
 
         cookie_str = f"{decoded.pop('name')}={decoded.pop('value')}"

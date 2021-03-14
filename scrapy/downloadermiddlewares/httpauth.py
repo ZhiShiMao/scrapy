@@ -20,12 +20,12 @@ class HttpAuthMiddleware:
         return o
 
     def spider_opened(self, spider):
-        usr = getattr(spider, 'http_user', '')
-        pwd = getattr(spider, 'http_pass', '')
+        usr = getattr(spider, "http_user", "")
+        pwd = getattr(spider, "http_pass", "")
         if usr or pwd:
             self.auth = basic_auth_header(usr, pwd)
 
     def process_request(self, request, spider):
-        auth = getattr(self, 'auth', None)
-        if auth and b'Authorization' not in request.headers:
-            request.headers[b'Authorization'] = auth
+        auth = getattr(self, "auth", None)
+        if auth and b"Authorization" not in request.headers:
+            request.headers[b"Authorization"] = auth

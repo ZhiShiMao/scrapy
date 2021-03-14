@@ -16,7 +16,6 @@ from scrapy.utils.trackref import object_ref
 
 
 class Response(object_ref):
-
     def __init__(
         self,
         url,
@@ -66,26 +65,28 @@ class Response(object_ref):
         if isinstance(url, str):
             self._url = url
         else:
-            raise TypeError(f'{type(self).__name__} url must be str, '
-                            f'got {type(url).__name__}')
+            raise TypeError(
+                f"{type(self).__name__} url must be str, " f"got {type(url).__name__}"
+            )
 
-    url = property(_get_url, obsolete_setter(_set_url, 'url'))
+    url = property(_get_url, obsolete_setter(_set_url, "url"))
 
     def _get_body(self):
         return self._body
 
     def _set_body(self, body):
         if body is None:
-            self._body = b''
+            self._body = b""
         elif not isinstance(body, bytes):
             raise TypeError(
                 "Response body must be bytes. "
                 "If you want to pass unicode body use TextResponse "
-                "or HtmlResponse.")
+                "or HtmlResponse."
+            )
         else:
             self._body = body
 
-    body = property(_get_body, obsolete_setter(_set_body, 'body'))
+    body = property(_get_body, obsolete_setter(_set_body, "body"))
 
     def __str__(self):
         return f"<{self.status} {self.url}>"
@@ -101,10 +102,18 @@ class Response(object_ref):
         given new values.
         """
         for x in [
-            "url", "status", "headers", "body", "request", "flags", "certificate", "ip_address", "protocol",
+            "url",
+            "status",
+            "headers",
+            "body",
+            "request",
+            "flags",
+            "certificate",
+            "ip_address",
+            "protocol",
         ]:
             kwargs.setdefault(x, getattr(self, x))
-        cls = kwargs.pop('cls', self.__class__)
+        cls = kwargs.pop("cls", self.__class__)
         return cls(*args, **kwargs)
 
     def urljoin(self, url):
@@ -131,9 +140,22 @@ class Response(object_ref):
         """
         raise NotSupported("Response content isn't text")
 
-    def follow(self, url, callback=None, method='GET', headers=None, body=None,
-               cookies=None, meta=None, encoding='utf-8', priority=0,
-               dont_filter=False, errback=None, cb_kwargs=None, flags=None):
+    def follow(
+        self,
+        url,
+        callback=None,
+        method="GET",
+        headers=None,
+        body=None,
+        cookies=None,
+        meta=None,
+        encoding="utf-8",
+        priority=0,
+        dont_filter=False,
+        errback=None,
+        cb_kwargs=None,
+        flags=None,
+    ):
         # type: (...) -> Request
         """
         Return a :class:`~.Request` instance to follow a link ``url``.
@@ -170,9 +192,22 @@ class Response(object_ref):
             flags=flags,
         )
 
-    def follow_all(self, urls, callback=None, method='GET', headers=None, body=None,
-                   cookies=None, meta=None, encoding='utf-8', priority=0,
-                   dont_filter=False, errback=None, cb_kwargs=None, flags=None):
+    def follow_all(
+        self,
+        urls,
+        callback=None,
+        method="GET",
+        headers=None,
+        body=None,
+        cookies=None,
+        meta=None,
+        encoding="utf-8",
+        priority=0,
+        dont_filter=False,
+        errback=None,
+        cb_kwargs=None,
+        flags=None,
+    ):
         # type: (...) -> Generator[Request, None, None]
         """
         .. versionadded:: 2.0
@@ -186,7 +221,7 @@ class Response(object_ref):
         method which supports selectors in addition to absolute/relative URLs
         and Link objects.
         """
-        if not hasattr(urls, '__iter__'):
+        if not hasattr(urls, "__iter__"):
             raise TypeError("'urls' argument must be an iterable")
         return (
             self.follow(

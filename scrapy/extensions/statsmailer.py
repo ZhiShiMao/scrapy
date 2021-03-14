@@ -8,8 +8,8 @@ from scrapy import signals
 from scrapy.mail import MailSender
 from scrapy.exceptions import NotConfigured
 
-class StatsMailer:
 
+class StatsMailer:
     def __init__(self, stats, recipients, mail):
         self.stats = stats
         self.recipients = recipients

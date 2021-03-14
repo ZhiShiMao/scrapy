@@ -15,10 +15,22 @@ from scrapy.utils.curl import curl_to_request_kwargs
 
 
 class Request(object_ref):
-
-    def __init__(self, url, callback=None, method='GET', headers=None, body=None,
-                 cookies=None, meta=None, encoding='utf-8', priority=0,
-                 dont_filter=False, errback=None, flags=None, cb_kwargs=None):
+    def __init__(
+        self,
+        url,
+        callback=None,
+        method="GET",
+        headers=None,
+        body=None,
+        cookies=None,
+        meta=None,
+        encoding="utf-8",
+        priority=0,
+        dont_filter=False,
+        errback=None,
+        flags=None,
+        cb_kwargs=None,
+    ):
 
         self._encoding = encoding  # this one has to be set first
         self.method = str(method).upper()
@@ -29,9 +41,11 @@ class Request(object_ref):
         self.priority = priority
 
         if callback is not None and not callable(callback):
-            raise TypeError(f'callback must be a callable, got {type(callback).__name__}')
+            raise TypeError(
+                f"callback must be a callable, got {type(callback).__name__}"
+            )
         if errback is not None and not callable(errback):
-            raise TypeError(f'errback must be a callable, got {type(errback).__name__}')
+            raise TypeError(f"errback must be a callable, got {type(errback).__name__}")
         self.callback = callback
         self.errback = errback
 
@@ -60,30 +74,32 @@ class Request(object_ref):
 
     def _set_url(self, url):
         if not isinstance(url, str):
-            raise TypeError(f'Request url must be str or unicode, got {type(url).__name__}')
+            raise TypeError(
+                f"Request url must be str or unicode, got {type(url).__name__}"
+            )
 
         s = safe_url_string(url, self.encoding)
         self._url = escape_ajax(s)
 
         if (
-            '://' not in self._url
-            and not self._url.startswith('about:')
-            and not self._url.startswith('data:')
+            "://" not in self._url
+            and not self._url.startswith("about:")
+            and not self._url.startswith("data:")
         ):
-            raise ValueError(f'Missing scheme in request url: {self._url}')
+            raise ValueError(f"Missing scheme in request url: {self._url}")
 
-    url = property(_get_url, obsolete_setter(_set_url, 'url'))
+    url = property(_get_url, obsolete_setter(_set_url, "url"))
 
     def _get_body(self):
         return self._body
 
     def _set_body(self, body):
         if body is None:
-            self._body = b''
+            self._body = b""
         else:
             self._body = to_bytes(body, self.encoding)
 
-    body = property(_get_body, obsolete_setter(_set_body, 'body'))
+    body = property(_get_body, obsolete_setter(_set_body, "body"))
 
     @property
     def encoding(self):
@@ -102,10 +118,23 @@ class Request(object_ref):
         """Create a new Request with the same attributes except for those
         given new values.
         """
-        for x in ['url', 'method', 'headers', 'body', 'cookies', 'meta', 'flags',
-                  'encoding', 'priority', 'dont_filter', 'callback', 'errback', 'cb_kwargs']:
+        for x in [
+            "url",
+            "method",
+            "headers",
+            "body",
+            "cookies",
+            "meta",
+            "flags",
+            "encoding",
+            "priority",
+            "dont_filter",
+            "callback",
+            "errback",
+            "cb_kwargs",
+        ]:
             kwargs.setdefault(x, getattr(self, x))
-        cls = kwargs.pop('cls', self.__class__)
+        cls = kwargs.pop("cls", self.__class__)
         return cls(*args, **kwargs)
 
     @classmethod
@@ -137,7 +166,7 @@ class Request(object_ref):
         To translate a cURL command into a Scrapy request,
         you may use `curl2scrapy <https://michael-shub.github.io/curl2scrapy/>`_.
 
-       """
+        """
         request_kwargs = curl_to_request_kwargs(curl_command, ignore_unknown_options)
         request_kwargs.update(kwargs)
         return cls(**request_kwargs)
